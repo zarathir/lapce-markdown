@@ -2,11 +2,11 @@ name = "Lapce-Markdown"
 version = "0.1.0"
 author = "zarathir"
 display-name = "Markdown"
-description = "Lapce Markdown powered by Marksman"
+description = "Markdown powered by Marksman"
 wasm = "bin/lapce-markdown.wasm"
 
 [activation]
-language = []
+language = ["markdown"]
 workspace-contains = []
 
 [config."lsp.serverPath"]

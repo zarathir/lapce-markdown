@@ -7,12 +7,16 @@
 use anyhow::Result;
 use lapce_plugin::{
     psp_types::{
-        lsp_types::{request::Initialize, DocumentFilter, DocumentSelector, InitializeParams, Url, MessageType},
+        lsp_types::{
+            request::Initialize, DocumentFilter, DocumentSelector, InitializeParams, MessageType,
+            Url,
+        },
         Request,
     },
-    register_plugin, LapcePlugin, VoltEnvironment, PLUGIN_RPC,
+    register_plugin, Http, LapcePlugin, VoltEnvironment, PLUGIN_RPC,
 };
 use serde_json::Value;
+use std::path::PathBuf;
 
 #[derive(Default)]
 struct State {}
@@ -22,50 +26,50 @@ register_plugin!(State);
 fn initialize(params: InitializeParams) -> Result<()> {
     let document_selector: DocumentSelector = vec![DocumentFilter {
         // lsp language id
-        language: Some(String::from("Markdown")),
+        language: Some(String::from("markdown")),
         // glob pattern
         pattern: Some(String::from("**/*.md")),
         // like file:
         scheme: None,
     }];
-    let mut server_args = vec![];
+    let server_args = vec![];
 
-    // Check for user specified LSP server path
-    // ```
-    // [lapce-plugin-name.lsp]
-    // serverPath = "[path or filename]"
-    // serverArgs = ["--arg1", "--arg2"]
-    // ```
-    if let Some(options) = params.initialization_options.as_ref() {
-        if let Some(lsp) = options.get("lsp") {
-            if let Some(args) = lsp.get("serverArgs") {
-                if let Some(args) = args.as_array() {
-                    if !args.is_empty() {
-                        server_args = vec![];
-                    }
-                    for arg in args {
-                        if let Some(arg) = arg.as_str() {
-                            server_args.push(arg.to_string());
-                        }
-                    }
-                }
+    let server_path = params
+        .initialization_options
+        .as_ref()
+        .and_then(|options| options.get("serverPath"))
+        .and_then(|server_path| server_path.as_str())
+        .and_then(|server_path| {
+            if !server_path.is_empty() {
+                Some(server_path)
+            } else {
+                None
             }
+        });
 
-            if let Some(server_path) = lsp.get("serverPath") {
-                if let Some(server_path) = server_path.as_str() {
-                    if !server_path.is_empty() {
-                        let server_uri = Url::parse(&format!("urn:{}", server_path))?;
-                        PLUGIN_RPC.start_lsp(
-                            server_uri,
-                            server_args,
-                            document_selector,
-                            params.initialization_options,
-                        );
-                        return Ok(());
-                    }
-                }
-            }
+    if let Some(server_path) = server_path {
+        let program = match std::env::var("VOLT_OS").as_deref() {
+            Ok("windows") => "where",
+            _ => "which",
+        };
+        let exists = PLUGIN_RPC
+            .execute_process(program.to_string(), vec![server_path.to_string()])
+            .map(|r| r.success)
+            .unwrap_or(false);
+        if !exists {
+            PLUGIN_RPC.window_show_message(
+                MessageType::ERROR,
+                format!("server path {server_path} couldn't be found, please check"),
+            );
+            return Ok(());
         }
+        PLUGIN_RPC.start_lsp(
+            Url::parse(&format!("urn:{server_path}"))?,
+            server_args,
+            document_selector,
+            params.initialization_options,
+        );
+        return Ok(());
     }
 
     // Architecture check
@@ -79,29 +83,33 @@ fn initialize(params: InitializeParams) -> Result<()> {
     let file_name = match VoltEnvironment::operating_system().as_deref() {
         Ok("macos") => "marksman-macos",
         Ok("linux") => "marksman-linux",
-        Ok("windows") => "windows.exe",
+        Ok("windows") => "marksman.exe",
         _ => return Ok(()),
     };
 
     let file_path = PathBuf::from(&file_name);
     if !file_path.exists() {
         let result: Result<()> = {
-            let url = format!("https://github.com/artempyanykh/marksman/releases/download/2022-12-28/{filename}");
+            let url = format!(
+                "https://github.com/artempyanykh/marksman/releases/download/2022-12-28/{file_name}"
+            );
             let mut resp = Http::get(&url)?;
             let body = resp.body_read_all()?;
             std::fs::write(&file_path, body)?;
-            let mut file = File::create(&file_path)?;
-            std::io::copy(&mut body, &mut file)?;
             Ok(())
         };
+        if result.is_err() {
+            PLUGIN_RPC.window_show_message(
+                MessageType::ERROR,
+                "Unable to download Marksman, please use server path in the settings.".to_string(),
+            );
+            return Ok(());
+        }
     }
 
     // Plugin working directory
     let volt_uri = VoltEnvironment::uri()?;
-    let server_uri = Url::parse(&volt_uri)?.join("[filename]")?;
-
-    // if you want to use server from PATH
-    // let server_uri = Url::parse(&format!("urn:{filename}"))?;
+    let server_uri = Url::parse(&volt_uri)?.join("[file_name]")?;
 
     // Available language IDs
     // https://github.com/lapce/lapce/blob/HEAD/lapce-proxy/src/buffer.rs#L173
@@ -122,7 +130,10 @@ impl LapcePlugin for State {
             Initialize::METHOD => {
                 let params: InitializeParams = serde_json::from_value(params).unwrap();
                 if let Err(e) = initialize(params) {
-                    PLUGIN_RPC.window_show_message(MessageType::ERROR, format!("plugin returned with error: {e}"))
+                    PLUGIN_RPC.window_show_message(
+                        MessageType::ERROR,
+                        format!("plugin returned with error: {e}"),
+                    )
                 }
             }
             _ => {}
