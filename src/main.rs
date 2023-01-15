@@ -22,9 +22,9 @@ register_plugin!(State);
 fn initialize(params: InitializeParams) -> Result<()> {
     let document_selector: DocumentSelector = vec![DocumentFilter {
         // lsp language id
-        language: Some(String::from("language_id")),
+        language: Some(String::from("Markdown")),
         // glob pattern
-        pattern: Some(String::from("**/*.{ext1,ext2}")),
+        pattern: Some(String::from("**/*.md")),
         // like file:
         scheme: None,
     }];
@@ -76,24 +76,25 @@ fn initialize(params: InitializeParams) -> Result<()> {
     };
 
     // OS check
-    let _ = match VoltEnvironment::operating_system().as_deref() {
-        Ok("macos") => "macos",
-        Ok("linux") => "linux",
-        Ok("windows") => "windows",
+    let file_name = match VoltEnvironment::operating_system().as_deref() {
+        Ok("macos") => "marksman-macos",
+        Ok("linux") => "marksman-linux",
+        Ok("windows") => "windows.exe",
         _ => return Ok(()),
     };
 
-    // Download URL
-    // let _ = format!("https://github.com/<name>/<project>/releases/download/<version>/{filename}");
-
-    // see lapce_plugin::Http for available API to download files
-
-    let _ = match VoltEnvironment::operating_system().as_deref() {
-        Ok("windows") => {
-            format!("{}.exe", "[filename]")
-        }
-        _ => "[filename]".to_string(),
-    };
+    let file_path = PathBuf::from(&file_name);
+    if !file_path.exists() {
+        let result: Result<()> = {
+            let url = format!("https://github.com/artempyanykh/marksman/releases/download/2022-12-28/{filename}");
+            let mut resp = Http::get(&url)?;
+            let body = resp.body_read_all()?;
+            std::fs::write(&file_path, body)?;
+            let mut file = File::create(&file_path)?;
+            std::io::copy(&mut body, &mut file)?;
+            Ok(())
+        };
+    }
 
     // Plugin working directory
     let volt_uri = VoltEnvironment::uri()?;

@@ -1,9 +1,9 @@
-name = "<plugin-name>"
-version = "0.0.0"
-author = "<your name>"
-display-name = "<plugin-display-name>"
-description = "<plugin-description>"
-wasm = "bin/<plugin-name>.wasm"
+name = "Lapce-Markdown"
+version = "0.1.0"
+author = "zarathir"
+display-name = "Markdown"
+description = "Lapce Markdown powered by Marksman"
+wasm = "bin/lapce-markdown.wasm"
 
 [activation]
 language = []
