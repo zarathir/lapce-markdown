@@ -4,6 +4,7 @@ author = "zarathir"
 display-name = "Markdown"
 description = "Markdown powered by Marksman"
 wasm = "bin/lapce-markdown.wasm"
+icon = "markdown-logo.png"
 repository = "https://github.com/zarathir/lapce-markdown"
 
 [activation]
