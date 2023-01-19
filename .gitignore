@@ -43,3 +43,5 @@ Cargo.lock
 *.code-workspace
 
 .crates*
+
+/bin

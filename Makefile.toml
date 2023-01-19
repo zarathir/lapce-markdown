@@ -31,4 +31,4 @@ args = ["install", "--path", ".", "--debug"]
 
 [tasks.build-release]
 command = "cargo"
-args = ["install", "--path", ".", "--", "-Z", "wasi-exec-model=reactor"]
+args = ["install", "--path", "."]

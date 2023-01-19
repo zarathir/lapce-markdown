@@ -16,7 +16,7 @@ use lapce_plugin::{
     register_plugin, Http, LapcePlugin, VoltEnvironment, PLUGIN_RPC,
 };
 use serde_json::Value;
-use std::path::PathBuf;
+use std::{fs::File, path::PathBuf};
 
 #[derive(Default)]
 struct State {}
@@ -95,7 +95,8 @@ fn initialize(params: InitializeParams) -> Result<()> {
             );
             let mut resp = Http::get(&url)?;
             let body = resp.body_read_all()?;
-            std::fs::write(&file_path, body)?;
+            let mut file = File::create(&file_path)?;
+            std::io::copy(&mut body.as_slice(), &mut file)?;
             Ok(())
         };
         if result.is_err() {
@@ -109,7 +110,7 @@ fn initialize(params: InitializeParams) -> Result<()> {
 
     // Plugin working directory
     let volt_uri = VoltEnvironment::uri()?;
-    let server_uri = Url::parse(&volt_uri)?.join("[file_name]")?;
+    let server_uri = Url::parse(&volt_uri)?.join(file_name)?;
 
     // Available language IDs
     // https://github.com/lapce/lapce/blob/HEAD/lapce-proxy/src/buffer.rs#L173
