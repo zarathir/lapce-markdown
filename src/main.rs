@@ -91,7 +91,7 @@ fn initialize(params: InitializeParams) -> Result<()> {
     if !file_path.exists() {
         let result: Result<()> = {
             let url = format!(
-                "https://github.com/artempyanykh/marksman/releases/download/2022-12-28/{file_name}"
+                "https://github.com/artempyanykh/marksman/releases/download/2023-03-04/{file_name}"
             );
             let mut resp = Http::get(&url)?;
             let body = resp.body_read_all()?;
