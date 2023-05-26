@@ -1,6 +1,5 @@
 // Deny usage of print and eprint as it won't have same result
-// in WASI as if doing in standard program, you must really know
-// what you are doing to disable that lint (and you don't know)
+// use the functions provided by PLUGIN_RPC
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
