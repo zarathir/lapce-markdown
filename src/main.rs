@@ -72,16 +72,16 @@ fn initialize(params: InitializeParams) -> Result<()> {
     }
 
     // Architecture check
-    let _ = match VoltEnvironment::architecture().as_deref() {
-        Ok("x86_64") => "x86_64",
-        Ok("aarch64") => "aarch64",
+    let arch = match VoltEnvironment::architecture().as_deref() {
+        Ok("x86_64") => "marksman-linux-x64",
+        Ok("aarch64") => "marksman-linux-arm64",
         _ => return Ok(()),
     };
 
     // OS check
     let file_name = match VoltEnvironment::operating_system().as_deref() {
         Ok("macos") => "marksman-macos",
-        Ok("linux") => "marksman-linux",
+        Ok("linux") => arch,
         Ok("windows") => "marksman.exe",
         _ => return Ok(()),
     };
@@ -90,7 +90,7 @@ fn initialize(params: InitializeParams) -> Result<()> {
     if !file_path.exists() {
         let result: Result<()> = {
             let url = format!(
-                "https://github.com/artempyanykh/marksman/releases/download/2023-04-12/{file_name}"
+                "https://github.com/artempyanykh/marksman/releases/download/2023-06-01/{file_name}"
             );
             let mut resp = Http::get(&url)?;
             let body = resp.body_read_all()?;
