@@ -20,6 +20,8 @@ use std::{fs::File, path::PathBuf};
 #[derive(Default)]
 struct State {}
 
+const MARKDOWN_LATEST: &str = "2023-06-23";
+
 register_plugin!(State);
 
 fn initialize(params: InitializeParams) -> Result<()> {
@@ -90,7 +92,7 @@ fn initialize(params: InitializeParams) -> Result<()> {
     if !file_path.exists() {
         let result: Result<()> = {
             let url = format!(
-                "https://github.com/artempyanykh/marksman/releases/download/2023-06-01/{file_name}"
+                "https://github.com/artempyanykh/marksman/releases/download/{MARKDOWN_LATEST}/{file_name}"
             );
             let mut resp = Http::get(&url)?;
             let body = resp.body_read_all()?;
