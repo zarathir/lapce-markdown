@@ -20,7 +20,7 @@ use std::{fs::File, path::PathBuf};
 #[derive(Default)]
 struct State {}
 
-const MARKDOWN_LATEST: &str = "2023-06-23";
+const MARKDOWN_LATEST: &str = "2023-07-25";
 
 register_plugin!(State);
 
